@@ -8,10 +8,7 @@ import datetime
 import time
 import os, io, sys
 
-photos = []
-dup_photos = []
-count = 0
-
+# Helper functions
 def timestamp2string(timeStamp): 
     try: 
         d = datetime.datetime.fromtimestamp(timeStamp)
@@ -32,8 +29,22 @@ def rename_files(path, s, file):
     except Exception:
         print('Failed to rename')
 
+def handle_dup(s):
+    if s in photos:
+        count += 1
+        s += "-" + str(count)
+        print(s)
+        dup_photos.append(s)
+    photos.append(s)
 
-path = '/Users/destiny/' + sys.argv[1] + '/'
+
+# Starting of the main
+
+photos = []
+dup_photos = []
+count = 0
+path = sys.argv[1] + '/'
+
 for file in os.listdir(path): 
     if file.endswith(".heic"):
         print(file)
@@ -66,36 +77,36 @@ for file in os.listdir(path):
         image = Image.open(path+file)
         exifdata = image.getexif()
         # print(exifdata)
+        # Decode the metadata
         # for key, val in exifdata.items():
         #     if key in ExifTags.TAGS:
         #         print(f'{ExifTags.TAGS[key]}:{val}')
+
+        # Get Exif.Image.DateTime
         data = exifdata.get(306)
         if data == None:
-            # print("hit")
+            # if no DateTime is recorded, get file birth time of local system
+            # print("no Exif.Image.DateTime")
             data = get_FileCreateTime(path+file)
-            # print(data)
             
         # print(data)
         # decode bytes 
         if isinstance(data, bytes):
             data = data.decode()
         time = datetime.datetime.strptime(data, '%Y:%m:%d %H:%M:%S')
-
         # print(time)
 
+        # Format time to the output form
         s = time.strftime('%Y-%m-%d--%H-%M-%S')
         
-        if s in photos:
-            count += 1
-            s += "-" + str(count)
-            print(s)
-            dup_photos.append(s)
-        photos.append(s)
+        # handle duplicated timestamp 
+        # which is very likely to happen
+        # TODO: possible decision on 1. numbering the dup or 2. drop the dup
+        # currently using strategy 1
+        handle_dup(s)
 
         print(file, s+".JPG")
         rename_files(path, s, file)
-
-        
 
 # setList = set(photos)
 # photos.sort()

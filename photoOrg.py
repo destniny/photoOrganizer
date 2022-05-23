@@ -23,9 +23,10 @@ def get_FileCreateTime(filePath):
     t = os.path.getctime(filePath)
     return timestamp2string(os.stat(filePath).st_birthtime)
 
-def rename_files(path, s, file):
+def rename_files(path, s, file, ext):
     try:
-        os.rename(path+file, path+s+".jpeg")
+        os.rename(path+file, path+s+ext)
+        print("RENAMED", file, s+ext)
     except Exception:
         print('Failed to rename')
 
@@ -55,28 +56,22 @@ for file in os.listdir(path):
         for metadata in heif_file.metadata:
             if metadata['type'] == 'Exif':
                 fstream = io.BytesIO(metadata['data'][6:])
-
             exifdata = exifread.process_file(fstream,details=False)
-            # print(exifdata)
-
-            # example to get device model from heic file
             time = str(exifdata.get("Image DateTime"))
-            # print(time)
-        # break
+            break
         
-
         time = datetime.strptime(time, '%Y:%m:%d %H:%M:%S')
-
-        # print(time)
-
         s = time.strftime('%Y-%m-%d %H%M%S')
 
         print(file, s)
+
+        rename_files(path, s, file, ".heic")
 
     elif file.endswith(('.jpg', '.JPG', '.jpeg', '.JPEG')):
         image = Image.open(path+file)
         exifdata = image.getexif()
         # print(exifdata)
+
         # Decode the metadata
         # for key, val in exifdata.items():
         #     if key in ExifTags.TAGS:
@@ -87,9 +82,9 @@ for file in os.listdir(path):
         if data == None:
             # if no DateTime is recorded, get file birth time of local system
             # print("no Exif.Image.DateTime")
-            data = get_FileCreateTime(path+file)
-            
+            data = get_FileCreateTime(path+file)        
         # print(data)
+
         # decode bytes 
         if isinstance(data, bytes):
             data = data.decode()
@@ -105,8 +100,8 @@ for file in os.listdir(path):
         # currently using strategy 1
         handle_dup(s)
 
-        print(file, s+".JPG")
-        rename_files(path, s, file)
+        print(file, s)
+        rename_files(path, s, file, ".jpeg")
 
 # setList = set(photos)
 # photos.sort()
